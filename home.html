@@ -1,0 +1,2586 @@
+
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>InkVerse — Fanfiction Library</title>
+  <style>
+    :root{
+      --radius: 22px;
+      --radius2: 16px;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --focus: 0 0 0 4px rgba(139,92,246,.22);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+
+      /* Accent as RGB triplets (so we can do rgba(var(--b1),.2)) */
+      --b1: 139,92,246;  /* glow */
+      --b2: 34,197,94;
+      --b3: 6,182,212;
+
+      /* Theme neutrals (default dark) */
+      --bg0:#070716;
+      --bg1:#0b0b22;
+      --panel: rgba(10,10,26,.55);
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --muted2: rgba(255,255,255,.52);
+      --glass: rgba(0,0,0,.22);
+      --glass2: rgba(255,255,255,.05);
+
+      --danger: 239,68,68;
+    }
+
+    html[data-theme="light"]{
+      --bg0:#f7f7ff;
+      --bg1:#eef2ff;
+      --panel: rgba(255,255,255,.78);
+      --card: rgba(255,255,255,.85);
+      --stroke: rgba(2,6,23,.12);
+      --text: rgba(2,6,23,.90);
+      --muted: rgba(2,6,23,.65);
+      --muted2: rgba(2,6,23,.50);
+      --glass: rgba(2,6,23,.05);
+      --glass2: rgba(2,6,23,.04);
+      --shadow: 0 20px 60px rgba(2,6,23,.12);
+      --focus: 0 0 0 4px rgba(139,92,246,.18);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1000px 700px at 15% 10%, rgba(var(--b1),.22), transparent 55%),
+        radial-gradient(900px 650px at 85% 15%, rgba(var(--b3),.18), transparent 55%),
+        radial-gradient(1000px 800px at 50% 90%, rgba(var(--b2),.14), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    .grain{
+      pointer-events:none;
+      position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      opacity:.08;
+      animation: drift 9s linear infinite;
+    }
+    html[data-theme="light"] .grain{ opacity:.04; mix-blend-mode:multiply; }
+    @keyframes drift{ from{transform:translate3d(0,0,0);} to{transform:translate3d(-40px,20px,0);} }
+
+    a{ color:inherit; text-decoration:none; }
+    button, input, textarea, select { font:inherit; }
+    ::selection{ background: rgba(var(--b1),.28); }
+
+    .app{ display:grid; grid-template-columns:290px 1fr; min-height:100vh; }
+
+    .sidebar{
+      position:sticky; top:0;
+      height:100vh;
+      padding:18px;
+      border-right:1px solid var(--stroke);
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand{ display:flex; gap:12px; align-items:center; padding:10px 10px 14px; border-radius: var(--radius2); user-select:none; }
+    .logo{
+      width:42px; height:42px;
+      border-radius:14px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.9), transparent 60%),
+        linear-gradient(135deg, rgba(var(--b1),.95), rgba(var(--b3),.92));
+      box-shadow: 0 12px 25px rgba(var(--b1),.22);
+      position:relative; overflow:hidden;
+    }
+    .logo::after{
+      content:"";
+      position:absolute; inset:-2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+      transform: translateX(-80%) rotate(10deg);
+      animation: shine 3.2s ease-in-out infinite;
+    }
+    @keyframes shine{
+      0%,55%{ transform: translateX(-90%) rotate(10deg); opacity:0; }
+      65%{ opacity:1; }
+      100%{ transform: translateX(90%) rotate(10deg); opacity:0; }
+    }
+    .brand h1{ margin:0; font-size:18px; letter-spacing:.2px; line-height:1.1; }
+    .brand p{ margin:3px 0 0; color: var(--muted); font-size:12px; }
+
+    .nav{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+    .navbtn{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px; border-radius:16px;
+      border:1px solid transparent; background:transparent; color:var(--text);
+      cursor:pointer; text-align:left;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .navbtn:hover{ background: rgba(255,255,255,.06); transform: translateY(-1px); }
+    html[data-theme="light"] .navbtn:hover{ background: rgba(2,6,23,.05); }
+    .navbtn[aria-current="page"]{
+      background: linear-gradient(135deg, rgba(var(--b1),.18), rgba(var(--b3),.12));
+      border-color: rgba(var(--b1),.28);
+      box-shadow: 0 12px 30px rgba(0,0,0,.15);
+    }
+    .navleft{ display:flex; align-items:center; gap:10px; }
+    .ico{
+      width:28px; height:28px; border-radius:12px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:14px;
+    }
+    html[data-theme="light"] .ico{
+      background: rgba(2,6,23,.04);
+      border-color: rgba(2,6,23,.08);
+    }
+    .pill{
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+    }
+    html[data-theme="light"] .pill{
+      border-color: rgba(2,6,23,.12);
+      background: rgba(2,6,23,.03);
+    }
+
+    .panel{
+      margin-top:14px;
+      padding:12px;
+      border-radius: var(--radius);
+      border:1px solid var(--stroke);
+      background: var(--glass2);
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    }
+    .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .panel h3{ margin:0; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.2px; }
+    .small{ font-size:12px; color:var(--muted2); line-height:1.3; margin:8px 0 0; }
+
+    .main{ padding:22px 22px 28px; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:14px;
+      padding:14px 16px; border-radius: var(--radius);
+      border:1px solid var(--stroke);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .searchbar{
+      flex:1;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: var(--glass);
+    }
+    html[data-theme="light"] .searchbar{ border-color: rgba(2,6,23,.12); }
+    .searchbar input{
+      width:100%;
+      border:none; outline:none; background:transparent; color:var(--text);
+    }
+    .searchbar input::placeholder{ color: rgba(255,255,255,.45); }
+    html[data-theme="light"] .searchbar input::placeholder{ color: rgba(2,6,23,.45); }
+
+    .actions{ display:flex; gap:10px; align-items:center; }
+    .btn{
+      border:none; cursor:pointer; color:var(--text);
+      border-radius:999px; padding:10px 12px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      display:flex; align-items:center; gap:8px; user-select:none;
+    }
+    html[data-theme="light"] .btn{
+      background: rgba(2,6,23,.04);
+      border-color: rgba(2,6,23,.10);
+    }
+    .btn:hover{ background: rgba(255,255,255,.11); transform: translateY(-1px); }
+    html[data-theme="light"] .btn:hover{ background: rgba(2,6,23,.06); }
+    .btn:active{ transform: translateY(0) scale(.99); }
+    .btn:focus{ outline:none; box-shadow: var(--focus); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(var(--b1),.95), rgba(var(--b3),.85));
+      border-color: rgba(255,255,255,.18);
+      box-shadow: 0 16px 35px rgba(var(--b1),.20);
+    }
+    .btn.danger{
+      background: rgba(var(--danger),.14);
+      border-color: rgba(var(--danger),.25);
+    }
+    .btn.ghost{ background: transparent; }
+    .btn[disabled]{ opacity:.55; cursor:not-allowed; transform:none!important; }
+
+    .content{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:start;
+    }
+
+    .card{
+      border-radius: var(--radius);
+      border:1px solid var(--stroke);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:16px 16px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+    }
+    html[data-theme="light"] .cardHeader{
+      border-bottom-color: rgba(2,6,23,.10);
+      background: linear-gradient(180deg, rgba(2,6,23,.03), transparent);
+    }
+    .cardHeader h2{ margin:0; font-size:16px; letter-spacing:.2px; }
+    .cardHeader p{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4; }
+    .cardBody{ padding:14px 16px 16px; }
+
+    .grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+
+    .story{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: var(--glass);
+      overflow:hidden;
+      cursor:pointer;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      min-height:170px;
+    }
+    html[data-theme="light"] .story{ border-color: rgba(2,6,23,.10); }
+    .story:hover{
+      transform: translateY(-2px);
+      border-color: rgba(var(--b1),.35);
+      background: rgba(0,0,0,.16);
+    }
+    html[data-theme="light"] .story:hover{
+      background: rgba(2,6,23,.03);
+      border-color: rgba(var(--b1),.30);
+    }
+
+    .cover{
+      height:86px;
+      background:
+        radial-gradient(240px 90px at 30% 40%, rgba(var(--b1),.26), transparent 60%),
+        radial-gradient(220px 90px at 80% 30%, rgba(var(--b3),.22), transparent 55%),
+        linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border-bottom:1px solid rgba(255,255,255,.10);
+      position:relative;
+      overflow:hidden;
+    }
+    html[data-theme="light"] .cover{
+      border-bottom-color: rgba(2,6,23,.08);
+      background:
+        radial-gradient(240px 90px at 30% 40%, rgba(var(--b1),.18), transparent 60%),
+        radial-gradient(220px 90px at 80% 30%, rgba(var(--b3),.16), transparent 55%),
+        linear-gradient(135deg, rgba(2,6,23,.03), rgba(2,6,23,.01));
+    }
+    .cover::after{
+      content:"";
+      position:absolute; inset:-40% -40%;
+      background: conic-gradient(from 90deg, rgba(255,255,255,.12), transparent, rgba(255,255,255,.08), transparent);
+      opacity:.35;
+      animation: spin 9s linear infinite;
+    }
+    html[data-theme="light"] .cover::after{ opacity:.18; }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    .storyMeta{ padding:10px 12px 12px; }
+    .storyTitle{
+      margin:0;
+      font-size:14px; letter-spacing:.2px; line-height:1.2;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .storyInfo{
+      display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; align-items:center;
+      color: var(--muted); font-size:12px;
+    }
+
+    .tag{
+      padding:4px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.80);
+      font-size:12px;
+    }
+    html[data-theme="light"] .tag{
+      background: rgba(2,6,23,.03);
+      border-color: rgba(2,6,23,.10);
+      color: rgba(2,6,23,.78);
+    }
+
+    .mini{
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor:pointer;
+      transition: transform .12s ease, background .12s ease;
+      font-size:12px;
+      user-select:none;
+    }
+    html[data-theme="light"] .mini{
+      background: rgba(2,6,23,.04);
+      border-color: rgba(2,6,23,.10);
+    }
+    .mini:hover{ transform: translateY(-1px); background: rgba(255,255,255,.09); }
+    html[data-theme="light"] .mini:hover{ background: rgba(2,6,23,.06); }
+    .mini[disabled]{ opacity:.55; cursor:not-allowed; transform:none!important; }
+
+    .storyActions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+    .stats{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .stat{
+      padding:12px; border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: var(--glass);
+      cursor:pointer;
+      transition: transform .12s ease, background .12s ease;
+    }
+    .stat:hover{ transform: translateY(-1px); background: rgba(255,255,255,.06); }
+    html[data-theme="light"] .stat{ border-color: rgba(2,6,23,.10); }
+    html[data-theme="light"] .stat:hover{ background: rgba(2,6,23,.03); }
+    .stat .k{ font-size:12px; color: var(--muted); }
+    .stat .v{ margin-top:6px; font-size:20px; font-weight:700; letter-spacing:.3px; }
+
+    .view{ display:none; animation: fade .18s ease-out; }
+    .view.active{ display:block; }
+    @keyframes fade{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:translateY(0);} }
+
+    .split{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    }
+    .muted{ color: var(--muted); }
+    .mono{ font-family: var(--mono); }
+
+    .readerWrap{ display:flex; flex-direction:column; gap:12px; }
+    .readerTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .readerTitle{ display:flex; flex-direction:column; gap:4px; min-width:240px; }
+    .readerTitle h3{ margin:0; font-size:16px; }
+    .readerTitle .by{ font-size:12px; color: var(--muted); }
+
+    .readerControls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+
+    .seg{
+      display:flex; border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      background: var(--glass);
+    }
+    html[data-theme="light"] .seg{ border-color: rgba(2,6,23,.12); }
+    .seg button{
+      border:none; background:transparent; color:var(--muted);
+      padding:8px 10px; cursor:pointer;
+      transition: background .12s ease, color .12s ease;
+      font-size:12px;
+    }
+    .seg button[aria-pressed="true"]{ color: var(--text); background: rgba(255,255,255,.10); }
+    html[data-theme="light"] .seg button[aria-pressed="true"]{ background: rgba(2,6,23,.06); }
+
+    .reader{
+      border-radius: var(--radius);
+      border:1px solid rgba(255,255,255,.10);
+      background: var(--glass);
+      padding:14px 14px 16px;
+      max-height:50vh;
+      overflow:auto;
+      scroll-behavior:smooth;
+    }
+    html[data-theme="light"] .reader{ border-color: rgba(2,6,23,.10); }
+    .reader pre{
+      margin:0;
+      white-space:pre-wrap;
+      word-break: break-word;
+      line-height:1.75;
+      font-size: 14.5px;
+      color: rgba(255,255,255,.88);
+    }
+    html[data-theme="light"] .reader pre{ color: rgba(2,6,23,.88); }
+    .reader.smallText pre{ font-size: 13px; }
+    .reader.bigText pre{ font-size: 16px; }
+    .reader.xbigText pre{ font-size: 18px; }
+
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .rowItem{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: var(--glass);
+      padding:12px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    html[data-theme="light"] .rowItem{ border-color: rgba(2,6,23,.10); }
+    .rowItem h4{ margin:0; font-size:14px; }
+    .rowItem p{
+      margin:6px 0 0;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.4;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+    .rowRight{
+      display:flex; gap:8px; flex-wrap:wrap;
+      justify-content:flex-end; align-items:center;
+      min-width: 200px;
+    }
+
+    /* Modals + toast */
+    .modalBack{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+      display:none;
+      align-items:flex-start;              /* ✅ FIX: no vertical centering */
+      justify-content:center;
+      z-index:1500;
+      padding:18px;
+      overflow:auto;                      /* ✅ FIX: overlay scroll */
+    }
+    .modalBack.show{ display:flex; }
+    .modal{
+      width:min(980px,100%);
+      border-radius:26px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10,10,26,.82);
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
+      overflow:hidden;
+      margin-top:18px;
+      max-height: calc(100vh - 36px);     /* ✅ FIX: keep inside viewport */
+      display:flex;
+      flex-direction:column;              /* ✅ so body can scroll */
+    }
+    html[data-theme="light"] .modal{
+      background: rgba(255,255,255,.92);
+      border-color: rgba(2,6,23,.12);
+    }
+    .modalHeader{
+      padding:14px 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+      flex: 0 0 auto;
+    }
+    html[data-theme="light"] .modalHeader{
+      border-bottom-color: rgba(2,6,23,.10);
+      background: linear-gradient(180deg, rgba(2,6,23,.03), transparent);
+    }
+    .modalHeader h3{ margin:0; font-size:15px; }
+    .close{
+      border:none; cursor:pointer;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      padding:8px 10px;
+      border-radius:999px;
+    }
+    html[data-theme="light"] .close{
+      background: rgba(2,6,23,.04);
+      border-color: rgba(2,6,23,.10);
+    }
+    .modalBody{
+      padding:14px 16px 16px;
+      overflow:auto;                      /* ✅ FIX: modal content scroll */
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .modalFooter{
+      padding:14px 16px 16px;
+      display:flex; gap:10px; justify-content:flex-end;
+      border-top:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(0deg, rgba(255,255,255,.06), transparent);
+      flex: 0 0 auto;
+    }
+    html[data-theme="light"] .modalFooter{
+      border-top-color: rgba(2,6,23,.10);
+      background: linear-gradient(0deg, rgba(2,6,23,.03), transparent);
+    }
+
+    .form{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .field label{ font-size:12px; color: var(--muted); }
+    .field input, .field textarea, .field select{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: var(--glass);
+      color: var(--text);
+      padding:10px 12px;
+      outline:none;
+      max-width:100%;
+    }
+    html[data-theme="light"] .field input,
+    html[data-theme="light"] .field textarea,
+    html[data-theme="light"] .field select{
+      border-color: rgba(2,6,23,.12);
+    }
+    .field textarea{
+      min-height:160px;
+      resize: vertical;
+      grid-column:1/-1;
+      line-height:1.5;
+    }
+    .help{ grid-column:1/-1; font-size:12px; color: var(--muted2); line-height:1.4; margin:2px 0 0; }
+
+    .toast{
+      position:fixed; right:16px; bottom:16px;
+      display:flex; flex-direction:column; gap:10px;
+      z-index:2000;
+    }
+    .toast .t{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(10,10,26,.72);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30);
+      display:flex; gap:10px; align-items:flex-start;
+      animation: pop .18s ease-out;
+      max-width:420px;
+    }
+    html[data-theme="light"] .toast .t{
+      background: rgba(255,255,255,.85);
+      border-color: rgba(2,6,23,.12);
+    }
+    @keyframes pop{ from{transform:translateY(10px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+    .dot{ width:10px; height:10px; border-radius:999px; margin-top:5px; background: linear-gradient(135deg, rgba(var(--b1),1), rgba(var(--b3),1)); flex:0 0 auto; }
+    .msg{ flex:1; font-size:13px; line-height:1.4; color: rgba(255,255,255,.86); }
+    html[data-theme="light"] .msg{ color: rgba(2,6,23,.82); }
+    .x{ border:none; background:transparent; color: rgba(255,255,255,.6); cursor:pointer; padding:2px 6px; border-radius:10px; }
+    html[data-theme="light"] .x{ color: rgba(2,6,23,.55); }
+    .x:hover{ background: rgba(255,255,255,.08); }
+    html[data-theme="light"] .x:hover{ background: rgba(2,6,23,.06); }
+
+    /* Upload helpers */
+    .sr{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); border:0; white-space:nowrap; }
+    .tagPicker{
+      grid-column:1/-1;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      padding:10px;
+    }
+    html[data-theme="light"] .tagPicker{
+      border-color: rgba(2,6,23,.10);
+      background: rgba(2,6,23,.02);
+    }
+    .tagPickerTop{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px; }
+    .tagPickerTop input{
+      flex:1; min-width:220px;
+      border-radius:999px;
+      padding:8px 10px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+      max-width:100%;
+    }
+    html[data-theme="light"] .tagPickerTop input{
+      border-color: rgba(2,6,23,.12);
+      background: rgba(2,6,23,.04);
+    }
+    .tagPool{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tabbtn{
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor:pointer;
+      font-size:12px;
+    }
+    html[data-theme="light"] .tabbtn{
+      background: rgba(2,6,23,.04);
+      border-color: rgba(2,6,23,.10);
+    }
+    .tabbtn[aria-pressed="true"]{
+      background: linear-gradient(135deg, rgba(var(--b1),.22), rgba(var(--b3),.14));
+      border-color: rgba(var(--b1),.28);
+    }
+
+    .chapterBox{
+      grid-column:1/-1;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      padding:10px;
+    }
+    html[data-theme="light"] .chapterBox{
+      border-color: rgba(2,6,23,.10);
+      background: rgba(2,6,23,.02);
+    }
+    .chapterRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .chapterRow input{
+      flex:1; min-width:260px;
+      border-radius:999px;
+      padding:8px 10px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+      max-width:100%;
+    }
+    html[data-theme="light"] .chapterRow input{
+      border-color: rgba(2,6,23,.12);
+      background: rgba(2,6,23,.04);
+    }
+    .chapterBox textarea{ width:100%; min-height:120px; border-radius:16px; }
+
+    @media (max-width: 980px){
+      .app{ grid-template-columns:1fr; }
+      .sidebar{ height:auto; position:relative; border-right:none; border-bottom:1px solid var(--stroke); }
+      .content{ grid-template-columns:1fr; }
+      .grid{ grid-template-columns:1fr; }
+      .rowRight{ min-width:auto; }
+      .form{ grid-template-columns: 1fr; }
+    }
+
+    /* Sticky action bar inside upload modal (always visible) */
+    .upload-actions{
+      position: sticky;
+      bottom: 0;
+      padding: 12px;
+      margin-top: 12px;
+      background: rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid rgba(255,255,255,.12);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      z-index: 50;
+      border-radius: 16px;
+    }
+
+    .primary{
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(var(--b1),.95), rgba(var(--b3),.85));
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>InkVerse</h1>
+          <p id="whoLine">Write • Read • Tags • Subscribe</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Main navigation">
+        <button class="navbtn" data-route="home" aria-current="page" type="button">
+          <span class="navleft"><span class="ico">🏠</span> Home</span>
+          <span class="pill" id="pillHome">Tip</span>
+        </button>
+        <button class="navbtn" data-route="browse" type="button">
+          <span class="navleft"><span class="ico">📚</span> Browse</span>
+          <span class="pill" id="pillBrowse">0</span>
+        </button>
+        <button class="navbtn" data-route="tags" type="button">
+          <span class="navleft"><span class="ico">🏷️</span> Tags</span>
+          <span class="pill" id="pillTags">0</span>
+        </button>
+        <button class="navbtn" data-route="series" type="button">
+          <span class="navleft"><span class="ico">🧾</span> Series</span>
+          <span class="pill" id="pillSeries">0</span>
+        </button>
+        <button class="navbtn" data-route="read" type="button">
+          <span class="navleft"><span class="ico">📖</span> Reader</span>
+          <span class="pill" id="pillReader">New</span>
+        </button>
+        <button class="navbtn" data-route="dashboard" type="button">
+          <span class="navleft"><span class="ico">✨</span> Dashboard</span>
+          <span class="pill" id="pillDash">Me</span>
+        </button>
+        <button class="navbtn" id="btnOpenUpload" type="button">
+          <span class="navleft"><span class="ico">⬆️</span> Upload</span>
+          <span class="pill">+</span>
+        </button>
+      </nav>
+
+      <section class="panel">
+        <div class="row">
+          <h3>Account</h3>
+          <span class="pill mono" id="userPill">Guest</span>
+        </div>
+        <p class="small" id="sidebarHint">Login to upload and edit your own stories.</p>
+        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+          <button class="btn ghost" id="btnLogin" type="button">🔐 Login</button>
+          <button class="btn ghost" id="btnLogout" type="button">🚪 Logout</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="row">
+          <h3>Theme</h3>
+          <span class="pill" id="themePill">Dark</span>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <button class="btn" id="btnThemeSystem" type="button">🖥 System</button>
+          <button class="btn" id="btnThemeDark" type="button">🌙 Dark</button>
+          <button class="btn" id="btnThemeLight" type="button">☀️ Light</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="row">
+          <h3>Accent</h3>
+          <span class="pill" id="accentPill">Glow</span>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <button class="btn" id="btnGlow" type="button">🌈 Glow</button>
+          <button class="btn" id="btnCalm" type="button">🌙 Calm</button>
+          <button class="btn" id="btnZen" type="button">🍃 Zen</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="row">
+          <h3>Your Library</h3>
+          <span class="pill mono" id="libCount">0</span>
+        </div>
+        <p class="small">Backup/restore the whole library. Story downloads are inside Reader.</p>
+        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+          <button class="btn ghost" id="btnBackup" type="button">💾 Backup</button>
+          <button class="btn ghost" id="btnRestore" type="button">📥 Restore</button>
+          <input class="sr" id="importFile" type="file" accept="application/json" />
+        </div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="searchbar">
+          🔎 <input id="globalSearch" placeholder="Search stories… (title, author, tags, fandom, summary)" autocomplete="off" />
+        </div>
+        <div class="actions">
+          <button class="btn" id="btnShuffle" type="button">🎲 Shuffle</button>
+          <button class="btn primary" id="btnQuickUpload" type="button">✨ New Story</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="card">
+          <div class="cardHeader">
+            <h2 id="viewTitle">Welcome Home</h2>
+            <p id="viewDesc">Run this as one HTML file. Offline. Interactive.</p>
+          </div>
+          <div class="cardBody">
+
+            <!-- HOME -->
+            <div class="view active" id="view-home">
+              <div class="stats">
+                <div class="stat" id="statStoriesBox"><div class="k">Stories</div><div class="v" id="statStories">0</div></div>
+                <div class="stat" id="statBookmarksBox"><div class="k">Bookmarks</div><div class="v" id="statBookmarks">0</div></div>
+                <div class="stat" id="statSubsBox"><div class="k">Subscriptions</div><div class="v" id="statSubs">0</div></div>
+                <div class="stat" id="statStreakBox"><div class="k">Reading Streak</div><div class="v" id="statStreak">0</div></div>
+              </div>
+
+              <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn primary" id="btnGoBrowse" type="button">📚 Browse</button>
+                <button class="btn" id="btnGoTags" type="button">🏷️ Tags</button>
+                <button class="btn" id="btnGoSeries" type="button">🧾 Series</button>
+                <button class="btn" id="btnStartReading" type="button">📖 Continue</button>
+                <button class="btn" id="btnDemo" type="button">🧪 Add demo stories</button>
+              </div>
+
+              <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,.10); padding-top:14px;">
+                <h3 style="margin:0 0 8px; font-size:14px;">Trending</h3>
+                <div class="grid" id="homeGrid"></div>
+                <p class="muted" id="homeEmpty" style="margin:10px 0 0; font-size:13px; display:none;">
+                  Your library is empty. Login → New Story ✨
+                </p>
+              </div>
+            </div>
+
+            <!-- BROWSE -->
+            <div class="view" id="view-browse">
+              <div class="split">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                  <span class="tag" id="filterLabel">Filter: All</span>
+
+                  <select id="sortSelect" style="border-radius:999px; padding:8px 10px;">
+                    <option value="recent">Sort: Recent</option>
+                    <option value="title">Sort: Title</option>
+                    <option value="reads">Sort: Reads</option>
+                    <option value="likes">Sort: Likes</option>
+                  </select>
+
+                  <select id="ratingFilter" style="border-radius:999px; padding:8px 10px;">
+                    <option value="all">Rating: All</option>
+                    <option value="G">G</option>
+                    <option value="PG">PG</option>
+                    <option value="T">T</option>
+                    <option value="M">M</option>
+                  </select>
+
+                  <select id="statusFilter" style="border-radius:999px; padding:8px 10px;">
+                    <option value="all">Status: All</option>
+                    <option value="Ongoing">Ongoing</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Hiatus">Hiatus</option>
+                  </select>
+
+                  <input id="includeTags" placeholder="+ include tags (comma)" style="border-radius:999px; padding:8px 10px; border:1px solid rgba(255,255,255,.12); background: var(--glass); color: var(--text); outline:none;" />
+                  <input id="excludeTags" placeholder="- exclude tags (comma)" style="border-radius:999px; padding:8px 10px; border:1px solid rgba(255,255,255,.12); background: var(--glass); color: var(--text); outline:none;" />
+
+                  <button class="btn" id="btnClearFilters" type="button">✖ Clear</button>
+                </div>
+                <div class="muted" style="font-size:12px;">Showing <span class="mono" id="browseCount">0</span></div>
+              </div>
+
+              <div style="margin-top:12px;" class="grid" id="browseGrid"></div>
+              <p class="muted" id="browseEmpty" style="margin:10px 0 0; font-size:13px; display:none;">
+                No stories match your filters.
+              </p>
+            </div>
+
+            <!-- TAGS -->
+            <div class="view" id="view-tags">
+              <div class="split">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                  <span class="tag" id="tagModeLabel">All Tags</span>
+                  <button class="btn" id="btnTagsAll" type="button">🏷️ All</button>
+                  <button class="btn" id="btnTagsPopular" type="button">🔥 Popular</button>
+                  <button class="btn" id="btnTagsFavs" type="button">⭐ Favorites</button>
+                  <button class="btn" id="btnTagsClear" type="button">✖ Clear</button>
+                </div>
+                <div class="muted" style="font-size:12px;">Tags: <span class="mono" id="tagCount">0</span></div>
+              </div>
+
+              <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;" id="tagList"></div>
+
+              <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,.10); padding-top:14px;">
+                <h3 style="margin:0 0 8px; font-size:14px;" id="tagStoriesTitle">Stories under: All</h3>
+                <div class="grid" id="tagStoriesGrid"></div>
+                <p class="muted" id="tagStoriesEmpty" style="margin:10px 0 0; font-size:13px; display:none;">
+                  No stories under this tag yet.
+                </p>
+              </div>
+            </div>
+
+            <!-- SERIES -->
+            <div class="view" id="view-series">
+              <div class="split">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                  <span class="tag" id="seriesLabel">All Series</span>
+                  <button class="btn" id="btnSeriesAll" type="button">🧾 All</button>
+                  <button class="btn" id="btnSeriesMine" type="button">📝 Mine</button>
+                  <button class="btn" id="btnSeriesClear" type="button">✖ Clear</button>
+                </div>
+                <div class="muted" style="font-size:12px;">Series: <span class="mono" id="seriesCount">0</span></div>
+              </div>
+              <div style="margin-top:12px;" class="list" id="seriesList"></div>
+              <p class="muted" id="seriesEmpty" style="margin:10px 0 0; font-size:13px; display:none;">No series yet.</p>
+            </div>
+
+            <!-- READER -->
+            <div class="view" id="view-read">
+              <div class="readerWrap">
+                <div class="readerTop">
+                  <div class="readerTitle">
+                    <h3 id="readerStoryTitle">Pick a story to read</h3>
+                    <div class="by" id="readerStoryMeta">Use Browse → Read</div>
+                  </div>
+
+                  <div class="readerControls">
+                    <select id="chapterSelect" style="border-radius:999px; padding:8px 10px; border:1px solid rgba(255,255,255,.12); background: var(--glass); color: var(--text); outline:none;">
+                      <option value="0">Chapter 1</option>
+                    </select>
+                    <button class="btn" id="btnPrevChap" type="button">⬅ Prev</button>
+                    <button class="btn" id="btnNextChap" type="button">Next ➡</button>
+
+                    <div class="seg">
+                      <button id="txtSmall" type="button" aria-pressed="false">A−</button>
+                      <button id="txtMed" type="button" aria-pressed="true">A</button>
+                      <button id="txtBig" type="button" aria-pressed="false">A+</button>
+                      <button id="txtXB" type="button" aria-pressed="false">A++</button>
+                    </div>
+
+                    <button class="btn" id="btnBookmark" type="button">🔖 Bookmark</button>
+                    <button class="btn" id="btnSubAuthor" type="button">🔔 Author</button>
+                    <button class="btn" id="btnLike" type="button">💜 Like</button>
+                    <button class="btn danger" id="btnCloseReader" type="button">⏹ Close</button>
+                  </div>
+                </div>
+
+                <div class="reader" id="readerBox">
+                  <pre id="readerText" class="mono">Nothing open yet.</pre>
+                </div>
+
+                <div class="split">
+                  <div class="muted" style="font-size:12px;">
+                    Reads: <span class="mono" id="readerReads">0</span>
+                    • Likes: <span class="mono" id="readerLikes">0</span>
+                    • Words: <span class="mono" id="readerWords">0</span>
+                    • Progress: <span class="mono" id="readerProgress">0%</span>
+                  </div>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn" id="btnDownloadStory" type="button">⬇ Download .txt</button>
+                    <button class="btn" id="btnEditStory" type="button">✏️ Edit</button>
+                    <button class="btn danger" id="btnDeleteStory" type="button">🗑 Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="view" id="view-dashboard">
+              <div class="split">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn" data-dash="my" type="button">📝 My Stories</button>
+                  <button class="btn" data-dash="bookmarks" type="button">🔖 Bookmarks</button>
+                  <button class="btn" data-dash="subs" type="button">🔔 Subscriptions</button>
+                </div>
+                <button class="btn danger" id="btnResetAll" type="button">⚠ Reset</button>
+              </div>
+
+              <div style="margin-top:12px;" class="list" id="dashList"></div>
+              <p class="muted" id="dashEmpty" style="margin:10px 0 0; font-size:13px; display:none;">Nothing here yet.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <aside class="card">
+          <div class="cardHeader">
+            <h2>Quick Picks</h2>
+            <p>Suggestions + favorite tags.</p>
+          </div>
+          <div class="cardBody">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn primary" id="btnCreateFromScratch" type="button">✨ Upload</button>
+              <button class="btn" id="btnRandomRead" type="button">🎲 Random read</button>
+              <button class="btn" id="btnGoTags2" type="button">🏷️ Tags</button>
+              <button class="btn" id="btnGoDashSubs" type="button">🔔 Subs</button>
+            </div>
+
+            <div style="margin-top:14px;">
+              <h3 style="margin:0 0 8px; font-size:14px;">Suggested tags</h3>
+              <div id="tagCloud" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+              <p class="muted" id="tagCloudEmpty" style="margin:10px 0 0; font-size:13px; display:none;">
+                Upload or read stories to build suggestions.
+              </p>
+            </div>
+
+            <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,.10); padding-top:14px;">
+              <h3 style="margin:0 0 8px; font-size:14px;">Favorite tags</h3>
+              <div id="favTagsBox" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+              <p class="muted" id="favTagsEmpty" style="margin:10px 0 0; font-size:13px; display:none;">Favorite a tag ⭐ to see it here.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div class="modalBack" id="loginModalBack" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:720px;">
+      <div class="modalHeader">
+        <h3>Login / Sign Up (Offline)</h3>
+        <button class="close" id="btnCloseLogin" type="button">✖ Close</button>
+      </div>
+      <div class="modalBody">
+        <div class="form">
+          <div class="field" style="grid-column:1/-1;">
+            <label>Username</label>
+            <input id="loginUser" placeholder="e.g., nanayaa" maxlength="30" />
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Password</label>
+            <input id="loginPass" type="password" placeholder="choose something you remember" maxlength="50" />
+          </div>
+          <p class="help">Stored in your browser only. This is for ownership rules (edit/delete), not real online security.</p>
+        </div>
+      </div>
+      <div class="modalFooter">
+        <button class="btn" id="btnDoSignup" type="button">✨ Sign Up</button>
+        <button class="btn primary" id="btnDoLogin" type="button">🔐 Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD MODAL -->
+  <div class="modalBack" id="uploadModalBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="uploadTitle">Upload a Story</h3>
+        <button class="close" id="btnCloseUpload" type="button">✖ Close</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="tabs">
+          <button class="tabbtn" id="tabPaste" aria-pressed="true" type="button">🧾 Paste mode</button>
+          <button class="tabbtn" id="tabChapters" aria-pressed="false" type="button">📄 Chapters mode</button>
+        </div>
+
+        <form class="form" id="uploadForm">
+          <div class="field">
+            <label>Title</label>
+            <input id="fTitle" required maxlength="80" />
+          </div>
+          <div class="field">
+            <label>Author</label>
+            <input id="fAuthor" required maxlength="40" />
+          </div>
+
+          <div class="field">
+            <label>Fandom / Universe</label>
+            <input id="fFandom" maxlength="40" />
+          </div>
+          <div class="field">
+            <label>Rating</label>
+            <select id="fRating">
+              <option value="G">G</option><option value="PG">PG</option><option value="T" selected>T</option><option value="M">M</option>
+            </select>
+          </div>
+
+          <div class="field" style="grid-column:1/-1;">
+            <label>Tags (comma separated)</label>
+            <input id="fTags" maxlength="220" placeholder="e.g., romance, slow burn, mystery" />
+          </div>
+
+          <div class="tagPicker">
+            <div class="tagPickerTop">
+              <b style="font-size:12px; color:var(--muted);">Browse existing tags</b>
+              <input id="tagSearch" placeholder="Search tags…" />
+              <button class="mini" id="btnAddTypedTag" type="button">➕ Add typed</button>
+            </div>
+            <div class="tagPool" id="existingTagsPool"></div>
+          </div>
+
+          <div class="field" style="grid-column:1/-1;">
+            <label>Series (optional)</label>
+            <input id="fSeries" maxlength="60" placeholder="e.g., The Neon Chronicles" />
+          </div>
+
+          <div class="field" style="grid-column:1/-1;">
+            <label>Summary</label>
+            <input id="fSummary" maxlength="220" />
+          </div>
+
+          <div class="field">
+            <label>Status</label>
+            <select id="fStatus">
+              <option value="Ongoing" selected>Ongoing</option>
+              <option value="Completed">Completed</option>
+              <option value="Hiatus">Hiatus</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Chapters (optional number)</label>
+            <input id="fChapters" type="number" min="1" max="200" />
+          </div>
+
+          <!-- Paste mode -->
+          <div class="field" id="pasteModeField">
+            <label>Story content (paste here)</label>
+            <textarea id="fContent" placeholder="Tip: You can use headings like 'Chapter 1' and it will still split in Reader."></textarea>
+          </div>
+
+          <!-- Chapters mode -->
+          <div class="chapterBox" id="chaptersModeBox" style="display:none;">
+            <div class="chapterRow">
+              <b style="font-size:12px; color:var(--muted);">Chapters</b>
+              <button class="mini" id="btnAddChapter" type="button">➕ Add chapter</button>
+            </div>
+            <div id="chaptersList"></div>
+          </div>
+
+          <p class="help">
+            Only the logged-in author can edit/delete their own stories.
+          </p>
+
+          <input type="hidden" id="editId" value="" />
+          <input type="hidden" id="modeField" value="paste" />
+
+          <!-- Sticky upload bar (always visible) -->
+          <div class="upload-actions">
+            <button type="button" id="btnUploadStory" class="primary">Upload story</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn ghost" id="btnFillSample" type="button">🎭 Fill sample</button>
+        <button class="btn" id="btnCancelUpload" type="button">Cancel</button>
+        <button class="btn primary" id="btnSaveStory" type="submit" form="uploadForm">Save story</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---------- Helpers ----------
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const uid = () => "s_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
+    const nowISO = () => new Date().toISOString();
+    const norm = s => (s||"").trim().toLowerCase();
+    const clamp = (n,min,max) => Math.max(min, Math.min(max,n));
+    const safeName = (s) => String(s||"").replace(/[^\w.-]/g,"_").slice(0,60);
+
+    function escapeHTML(str){
+      return String(str)
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function toast(message){
+      const host = $("#toast");
+      const t = document.createElement("div");
+      t.className = "t";
+      t.innerHTML = `<div class="dot"></div><div class="msg">${escapeHTML(message)}</div><button class="x" type="button">✖</button>`;
+      host.appendChild(t);
+      const remove = () => { t.style.opacity="0"; t.style.transform="translateY(8px)"; setTimeout(()=>t.remove(), 180); };
+      $(".x",t).addEventListener("click", remove);
+      setTimeout(remove, 3200);
+    }
+
+    function parseTags(str){
+      return (str||"").split(",").map(t=>t.trim()).filter(Boolean).slice(0,40);
+    }
+    function wordCount(text){
+      const m = String(text||"").trim().match(/\b\w+\b/g);
+      return m ? m.length : 0;
+    }
+
+    // ---------- Storage ----------
+    const KEY_LIB = "inkverse_library_v4";
+    const KEY_STATE = "inkverse_state_v4";
+    const KEY_USERS = "inkverse_users_v1";
+    const KEY_SESSION = "inkverse_session_v1";
+    const KEY_PROGRESS = "inkverse_progress_v3";
+
+    const loadJSON = (k, fallback) => {
+      try{ const raw = localStorage.getItem(k); return raw ? JSON.parse(raw) : fallback; }
+      catch{ return fallback; }
+    };
+    const saveJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    let library = loadJSON(KEY_LIB, []);
+    let state = loadJSON(KEY_STATE, {
+      route:"home",
+      q:"",
+      sort:"recent",
+      dashTab:"my",
+      openId:null,
+      openChap:0,
+      themeMode:"dark",
+      accent:"glow",
+      ratingFilter:"all",
+      statusFilter:"all",
+      includeTags:"",
+      excludeTags:"",
+      selectedTag:null,
+      tagMode:"all", // all | popular | favs
+      selectedSeries:null,
+      seriesMode:"all", // all | mine
+      bookmarks: [],
+      subAuthors: [],
+      favTags: [],
+      streak:0,
+      lastReadDay:null
+    });
+    let users = loadJSON(KEY_USERS, {});
+    let session = loadJSON(KEY_SESSION, { user:null });
+    let progress = loadJSON(KEY_PROGRESS, {}); // storyId::chapIndex -> scrollTop
+
+    if(!Array.isArray(state.bookmarks)) state.bookmarks=[];
+    if(!Array.isArray(state.subAuthors)) state.subAuthors=[];
+    if(!Array.isArray(state.favTags)) state.favTags=[];
+
+    // ---------- Theme + Accent ----------
+    const mediaDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+
+    function applyThemeMode(){
+      const mode = state.themeMode || "dark";
+      if(mode === "system"){
+        const dark = mediaDark && mediaDark.matches;
+        document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        $("#themePill").textContent = dark ? "System (Dark)" : "System (Light)";
+      }else{
+        document.documentElement.setAttribute("data-theme", mode);
+        $("#themePill").textContent = mode[0].toUpperCase()+mode.slice(1);
+      }
+    }
+    function setThemeMode(mode){
+      state.themeMode = mode;
+      saveJSON(KEY_STATE, state);
+      applyThemeMode();
+      toast("Theme: "+mode);
+    }
+    function applyAccent(){
+      const a = state.accent || "glow";
+      $("#accentPill").textContent = a[0].toUpperCase()+a.slice(1);
+      if(a==="glow"){
+        document.documentElement.style.setProperty("--b1","139,92,246");
+        document.documentElement.style.setProperty("--b2","34,197,94");
+        document.documentElement.style.setProperty("--b3","6,182,212");
+      }else if(a==="calm"){
+        document.documentElement.style.setProperty("--b1","96,165,250");
+        document.documentElement.style.setProperty("--b2","167,139,250");
+        document.documentElement.style.setProperty("--b3","52,211,153");
+      }else{
+        document.documentElement.style.setProperty("--b1","34,197,94");
+        document.documentElement.style.setProperty("--b2","6,182,212");
+        document.documentElement.style.setProperty("--b3","245,158,11");
+      }
+    }
+    function setAccent(a){
+      state.accent = a;
+      saveJSON(KEY_STATE, state);
+      applyAccent();
+      toast("Accent: "+a);
+    }
+
+    // ---------- Auth ----------
+    const currentUser = () => session.user ? String(session.user) : null;
+    const isLoggedIn = () => !!currentUser();
+
+    function setSessionUser(u){
+      session.user = u;
+      saveJSON(KEY_SESSION, session);
+      updateAccountUI();
+    }
+
+    function updateAccountUI(){
+      const u = currentUser();
+      $("#userPill").textContent = u ? u : "Guest";
+      $("#whoLine").textContent = u ? `Logged in as @${u}` : "Write • Read • Tags • Subscribe";
+
+      $("#btnLogout").disabled = !u;
+      $("#btnQuickUpload").disabled = !u;
+      $("#btnOpenUpload").disabled = !u;
+      $("#btnCreateFromScratch").disabled = !u;
+
+      $("#sidebarHint").innerHTML = u
+        ? `You can upload stories as <b>@${escapeHTML(u)}</b>. Only you can edit your stories.`
+        : `Login to upload and edit your own stories. Demo stories are read-only.`;
+    }
+
+    function openLogin(){ $("#loginModalBack").classList.add("show"); document.body.style.overflow="hidden"; setTimeout(()=>$("#loginUser").focus(),0); }
+    function closeLogin(){ $("#loginModalBack").classList.remove("show"); document.body.style.overflow=""; }
+
+    function signup(){
+      const u = norm($("#loginUser").value);
+      const p = $("#loginPass").value;
+      if(!u || !p) return toast("Enter username + password.");
+      if(users[u]) return toast("Username already exists.");
+      users[u] = { pass:p, createdAt: nowISO() };
+      saveJSON(KEY_USERS, users);
+      setSessionUser(u);
+      closeLogin();
+      toast("Signed up ✅");
+      renderAll();
+    }
+    function login(){
+      const u = norm($("#loginUser").value);
+      const p = $("#loginPass").value;
+      if(!u || !p) return toast("Enter username + password.");
+      if(!users[u] || users[u].pass !== p) return toast("Wrong username or password.");
+      setSessionUser(u);
+      closeLogin();
+      toast("Logged in ✅");
+      renderAll();
+    }
+    function logout(){
+      setSessionUser(null);
+      toast("Logged out.");
+      renderAll();
+    }
+
+    // ---------- Demo ----------
+    function addDemo(){
+      const demoOwner="__system__";
+      const demo = [
+        {
+          id: uid(), owner: demoOwner,
+          title:"Neon Rain in Accra", author:"CitySketch",
+          fandom:"Original", rating:"T",
+          tags:["slice-of-life","romance","city nights","found family"],
+          series:"Neon Chronicles",
+          summary:"Two strangers meet under neon streetlights and become a whole universe to each other.",
+          status:"Ongoing",
+          chaptersArr:[
+            { title:"Chapter 1 — The First Drop", text:
+`The rain didn't ask permission.
+It just arrived—soft at first, then bold, like it owned the night.
+
+Ama folded her umbrella wrong again.
+Across the street, a boy laughed at nothing in particular.
+
+"You're going to break it," he called.
+"Mind your business," she replied—smiling anyway.`},
+            { title:"Chapter 2 — A Second Umbrella", text:
+`Sometimes the city gives you a second chance.
+Sometimes it gives you a second umbrella.`}
+          ],
+          reads:0,
+          likesBy:{},
+          createdAt: nowISO(), updatedAt: nowISO()
+        },
+        {
+          id: uid(), owner: demoOwner,
+          title:"The Library That Breathes", author:"PaperWitch",
+          fandom:"Fantasy", rating:"PG",
+          tags:["magic","mystery","slow burn","books"],
+          series:"",
+          summary:"Every midnight the shelves rearrange themselves. And one book keeps following you.",
+          status:"Ongoing",
+          chaptersArr:[
+            { title:"Chapter 1 — The Rulebook", text:
+`They said the library was quiet.
+They lied.
+
+At midnight, the shelves inhaled.
+Dust rose like ghosts learning to dance.
+
+Rule 1) Never run.
+Rule 2) Never shout.
+Rule 3) Never open a book that opens itself.`}
+          ],
+          reads:0,
+          likesBy:{},
+          createdAt: nowISO(), updatedAt: nowISO()
+        }
+      ];
+
+      const keyset = new Set(library.map(s => norm(s.title)+"|"+norm(s.author)));
+      const toAdd = demo.filter(s => !keyset.has(norm(s.title)+"|"+norm(s.author)));
+      library = [...toAdd, ...library];
+      saveJSON(KEY_LIB, library);
+      toast(toAdd.length ? "Demo stories added ✨" : "Demo stories already exist.");
+      renderAll();
+    }
+
+    // ---------- Routing ----------
+    const routes = ["home","browse","tags","series","read","dashboard"];
+    function setRoute(r){
+      if(!routes.includes(r)) r="home";
+      state.route = r;
+      saveJSON(KEY_STATE, state);
+
+      $$(".navbtn[data-route]").forEach(b=>{
+        b.setAttribute("aria-current", b.getAttribute("data-route")===r ? "page":"false");
+      });
+      $$(".view").forEach(v=>v.classList.remove("active"));
+      $("#view-"+r).classList.add("active");
+
+      const titles = {
+        home:["Welcome Home","Offline fanfiction library with tags, series, and reader."],
+        browse:["Browse","Advanced include/exclude tags + filters."],
+        tags:["Tags","All tags + popular + favorites, with counts."],
+        series:["Series","Collections/series grouping."],
+        read:["Reader","Chapters + like-once + author subscribe."],
+        dashboard:["Dashboard","Your stories, bookmarks, subscriptions."]
+      };
+      $("#viewTitle").textContent = titles[r][0];
+      $("#viewDesc").textContent = titles[r][1];
+
+      if(r==="home") renderHome();
+      if(r==="browse") renderBrowse();
+      if(r==="tags") renderTags();
+      if(r==="series") renderSeries();
+      if(r==="read") renderReader();
+      if(r==="dashboard") renderDashboard();
+
+      updateStats();
+    }
+
+    // ---------- Index helpers ----------
+    function buildTagIndex(){
+      const map = new Map();
+      library.forEach(s=>{
+        (s.tags||[]).map(norm).filter(Boolean).forEach(t=>{
+          if(!map.has(t)) map.set(t,{count:0, stories:[]});
+          const v = map.get(t);
+          v.count++; v.stories.push(s);
+        });
+      });
+      return map;
+    }
+    function buildSeriesIndex(){
+      const map = new Map();
+      library.forEach(s=>{
+        const name = (s.series||"").trim();
+        if(!name) return;
+        if(!map.has(name)) map.set(name,[]);
+        map.get(name).push(s);
+      });
+      return map;
+    }
+
+    function getBookmarks(){ return new Set(state.bookmarks||[]); }
+    function setBookmarks(set){ state.bookmarks=[...set]; saveJSON(KEY_STATE,state); }
+    function getSubAuthors(){ return new Set(state.subAuthors||[]); }
+    function setSubAuthors(set){ state.subAuthors=[...set]; saveJSON(KEY_STATE,state); }
+    function getFavTags(){ return new Set(state.favTags||[]); }
+    function setFavTags(set){ state.favTags=[...set]; saveJSON(KEY_STATE,state); }
+
+    // ---------- Story content helpers (chapters) ----------
+    function chaptersOf(story){
+      if(Array.isArray(story.chaptersArr) && story.chaptersArr.length){
+        return story.chaptersArr.map((c,i)=>({
+          title: c.title || `Chapter ${i+1}`,
+          text: c.text || ""
+        }));
+      }
+
+      const content = String(story.content||"").trim();
+      if(!content) return [{title:"Chapter 1", text:""}];
+
+      const lines = content.split(/\r?\n/);
+      const chapters = [];
+      let currentTitle = "Chapter 1";
+      let buf = [];
+
+      const isHeading = (line) => /^\s*(chapter|ch)\s*\d+/i.test(line) || /^\s*CHAPTER\s*\d+/i.test(line);
+      for(const line of lines){
+        if(isHeading(line) && buf.length){
+          chapters.push({ title: currentTitle, text: buf.join("\n").trim() });
+          currentTitle = line.trim();
+          buf = [];
+        }else{
+          if(isHeading(line) && !buf.length){
+            currentTitle = line.trim();
+          }else{
+            buf.push(line);
+          }
+        }
+      }
+      if(buf.length) chapters.push({ title: currentTitle, text: buf.join("\n").trim() });
+      return chapters.length ? chapters : [{title:"Chapter 1", text:content}];
+    }
+
+    function likesCount(story){
+      const likesBy = story.likesBy || {};
+      return Object.keys(likesBy).length;
+    }
+
+    function userHasLiked(story){
+      const u = currentUser();
+      if(!u) return false;
+      return !!(story.likesBy && story.likesBy[u]);
+    }
+
+    // ---------- Cards ----------
+    function storyCard(s){
+      const tags = (s.tags||[]).slice(0,3).map(t=>`<span class="tag" data-tag="${escapeHTML(norm(t))}">${escapeHTML(t)}</span>`).join("");
+      const metaBits = [
+        s.series ? `📌 ${escapeHTML(s.series)}` : null,
+        s.fandom ? `🌍 ${escapeHTML(s.fandom)}` : null,
+        `⭐ ${escapeHTML(s.rating||"T")}`,
+        `🔁 ${escapeHTML(s.status||"Ongoing")}`,
+        `💜 ${likesCount(s)}`
+      ].filter(Boolean).join(" • ");
+
+      return `
+        <div class="story" data-id="${escapeHTML(s.id)}" tabindex="0" role="button">
+          <div class="cover"></div>
+          <div class="storyMeta">
+            <h3 class="storyTitle">${escapeHTML(s.title)}</h3>
+            <div class="storyInfo">
+              <span class="muted">by ${escapeHTML(s.author||"Unknown")}</span>
+              <span class="muted">•</span>
+              <span class="muted">${metaBits}</span>
+            </div>
+            <div style="margin-top:8px; color: var(--muted); font-size:12px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              ${escapeHTML(s.summary||"No summary yet.")}
+            </div>
+            <div class="storyInfo" style="margin-top:10px;">${tags || `<span class="muted">No tags</span>`}</div>
+            <div class="storyActions">
+              <button class="mini" type="button" data-action="read" data-id="${escapeHTML(s.id)}">📖 Read</button>
+              <button class="mini" type="button" data-action="bookmark" data-id="${escapeHTML(s.id)}">🔖 Bookmark</button>
+              <button class="mini" type="button" data-action="tag" data-id="${escapeHTML(s.id)}">🏷️ Tags</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function wireStoryGrid(root){
+      $$(".story", root).forEach(card=>{
+        const id = card.getAttribute("data-id");
+        card.addEventListener("click",(e)=>{
+          const btn = e.target.closest?.("[data-action]");
+          const chip = e.target.closest?.("[data-tag]");
+          if(btn || chip) return;
+          openStory(id);
+        });
+        card.addEventListener("keydown",(e)=>{
+          if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openStory(id); }
+        });
+      });
+
+      $$("[data-action]", root).forEach(btn=>{
+        btn.addEventListener("click",(e)=>{
+          e.preventDefault(); e.stopPropagation();
+          const a = btn.getAttribute("data-action");
+          const id = btn.getAttribute("data-id");
+          if(a==="read") openStory(id);
+          if(a==="bookmark") toggleBookmark(id);
+          if(a==="tag"){
+            const s = library.find(x=>x.id===id);
+            if(s && (s.tags||[]).length){
+              state.selectedTag = norm(s.tags[0]);
+              state.tagMode = "all";
+              saveJSON(KEY_STATE,state);
+              setRoute("tags");
+            }else{
+              toast("No tags on this story.");
+              setRoute("tags");
+            }
+          }
+          renderAll();
+        });
+      });
+
+      $$("[data-tag]", root).forEach(chip=>{
+        chip.addEventListener("click",(e)=>{
+          e.preventDefault(); e.stopPropagation();
+          state.selectedTag = chip.getAttribute("data-tag");
+          state.tagMode = "all";
+          saveJSON(KEY_STATE,state);
+          setRoute("tags");
+        });
+      });
+    }
+
+    // ---------- Stats ----------
+    function updateStats(){
+      $("#libCount").textContent = String(library.length);
+      $("#pillBrowse").textContent = String(library.length);
+      $("#pillTags").textContent = String(buildTagIndex().size);
+      $("#pillSeries").textContent = String(buildSeriesIndex().size);
+      $("#pillReader").textContent = state.openId ? "Open" : "New";
+      $("#pillDash").textContent = currentUser() ? "Me" : "Guest";
+
+      const bms = getBookmarks();
+      const subs = getSubAuthors();
+
+      $("#statStories").textContent = String(library.length);
+      $("#statBookmarks").textContent = String(bms.size);
+      $("#statSubs").textContent = String(subs.size);
+      $("#statStreak").textContent = String(state.streak||0);
+    }
+
+    // ---------- Home ----------
+    function renderHome(){
+      const list = [...library].sort((a,b)=>(b.reads||0)-(a.reads||0)).slice(0,4);
+      $("#homeGrid").innerHTML = list.map(storyCard).join("");
+      $("#homeEmpty").style.display = library.length ? "none" : "block";
+      wireStoryGrid($("#homeGrid"));
+      renderTagCloud();
+      renderFavTagsBox();
+      updateStats();
+    }
+
+    // ---------- Browse ----------
+    function storyMatches(s, q){
+      if(!q) return true;
+      const hay = [
+        s.title, s.author, s.fandom, s.rating, s.summary, s.series,
+        ...(s.tags||[])
+      ].join(" ").toLowerCase();
+      return hay.includes(q.toLowerCase());
+    }
+    function sortStories(list, mode){
+      const arr=[...list];
+      if(mode==="title") arr.sort((a,b)=>(a.title||"").localeCompare(b.title||""));
+      else if(mode==="reads") arr.sort((a,b)=>(b.reads||0)-(a.reads||0));
+      else if(mode==="likes") arr.sort((a,b)=>likesCount(b)-likesCount(a));
+      else arr.sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
+      return arr;
+    }
+    function tagSetFromInput(v){ return new Set(parseTags(v).map(norm).filter(Boolean)); }
+    function storyHasAllTags(story, set){
+      if(!set.size) return true;
+      const tags = new Set((story.tags||[]).map(norm));
+      for(const t of set) if(!tags.has(t)) return false;
+      return true;
+    }
+    function storyHasAnyExcluded(story, ex){
+      if(!ex.size) return false;
+      const tags = new Set((story.tags||[]).map(norm));
+      for(const t of ex) if(tags.has(t)) return true;
+      return false;
+    }
+
+    function renderBrowse(){
+      const q = state.q || "";
+      const mode = state.sort || "recent";
+      $("#sortSelect").value = mode;
+      $("#ratingFilter").value = state.ratingFilter || "all";
+      $("#statusFilter").value = state.statusFilter || "all";
+      $("#includeTags").value = state.includeTags || "";
+      $("#excludeTags").value = state.excludeTags || "";
+
+      let filtered = library.filter(s=>storyMatches(s,q));
+
+      const rf = state.ratingFilter||"all";
+      const sf = state.statusFilter||"all";
+      if(rf!=="all") filtered = filtered.filter(s=>(s.rating||"T")===rf);
+      if(sf!=="all") filtered = filtered.filter(s=>(s.status||"Ongoing")===sf);
+
+      const inc = tagSetFromInput(state.includeTags||"");
+      const exc = tagSetFromInput(state.excludeTags||"");
+      filtered = filtered.filter(s=>storyHasAllTags(s,inc) && !storyHasAnyExcluded(s,exc));
+
+      filtered = sortStories(filtered, mode);
+
+      $("#browseGrid").innerHTML = filtered.map(storyCard).join("");
+      $("#browseCount").textContent = String(filtered.length);
+      $("#browseEmpty").style.display = filtered.length ? "none":"block";
+      $("#filterLabel").textContent = q ? `Filter: "${q}"` : "Filter: All";
+
+      wireStoryGrid($("#browseGrid"));
+      renderTagCloud();
+      renderFavTagsBox();
+      updateStats();
+    }
+
+    // ---------- Tags ----------
+    function renderTags(){
+      const idx = buildTagIndex();
+      const entries = Array.from(idx.entries());
+
+      $("#tagCount").textContent = String(entries.length);
+
+      const favs = getFavTags();
+      const mode = state.tagMode || "all";
+      $("#tagModeLabel").textContent = mode==="popular" ? "Popular Tags" : (mode==="favs" ? "Favorite Tags" : "All Tags");
+
+      let shown = entries.slice();
+      shown.sort((a,b)=>b[1].count - a[1].count || a[0].localeCompare(b[0]));
+      if(mode==="popular") shown = shown.slice(0, 40);
+      if(mode==="favs") shown = shown.filter(([t])=>favs.has(t));
+
+      const sel = state.selectedTag ? norm(state.selectedTag) : null;
+
+      $("#tagList").innerHTML = shown.map(([t,info])=>{
+        const active = sel===t;
+        const isFav = favs.has(t);
+        return `
+          <button class="mini" type="button" data-tagpick="${escapeHTML(t)}" style="${active ? 'border-color: rgba(var(--b1),.45);' : ''}">
+            ${escapeHTML(t)} <span class="muted mono">(${info.count})</span> ${isFav ? "⭐" : ""}
+          </button>
+          <button class="mini" type="button" data-tagfav="${escapeHTML(t)}" title="Favorite/unfavorite tag">${isFav ? "★" : "☆"}</button>
+        `;
+      }).join("");
+
+      $$("[data-tagpick]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          state.selectedTag = b.getAttribute("data-tagpick");
+          saveJSON(KEY_STATE,state);
+          renderTags();
+        });
+      });
+      $$("[data-tagfav]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          const t = b.getAttribute("data-tagfav");
+          const set = getFavTags();
+          if(set.has(t)) set.delete(t); else set.add(t);
+          setFavTags(set);
+          renderTags();
+          renderFavTagsBox();
+          toast("Tag favorites updated.");
+        });
+      });
+
+      const storiesForTag = sel ? (idx.get(sel)?.stories || []) : library;
+      $("#tagStoriesTitle").textContent = sel ? `Stories under: ${sel}` : "Stories under: All";
+      $("#tagStoriesGrid").innerHTML = sortStories(storiesForTag, "recent").map(storyCard).join("");
+      $("#tagStoriesEmpty").style.display = storiesForTag.length ? "none":"block";
+      wireStoryGrid($("#tagStoriesGrid"));
+
+      renderTagCloud();
+      renderFavTagsBox();
+      updateStats();
+    }
+
+    function renderTagCloud(){
+      const cloud = $("#tagCloud");
+      const empty = $("#tagCloudEmpty");
+      const idx = buildTagIndex();
+      const entries = Array.from(idx.entries()).sort((a,b)=>b[1].count-a[1].count).slice(0,12);
+      if(!entries.length){ cloud.innerHTML=""; empty.style.display="block"; return; }
+      empty.style.display="none";
+      cloud.innerHTML = entries.map(([t,info])=>`<button class="mini" type="button" data-cloud="${escapeHTML(t)}">${escapeHTML(t)} <span class="muted mono">(${info.count})</span></button>`).join("");
+      $$("[data-cloud]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          state.selectedTag = b.getAttribute("data-cloud");
+          state.tagMode = "all";
+          saveJSON(KEY_STATE,state);
+          setRoute("tags");
+        });
+      });
+    }
+
+    function renderFavTagsBox(){
+      const box = $("#favTagsBox");
+      const empty = $("#favTagsEmpty");
+      const favs = [...getFavTags()];
+      const idx = buildTagIndex();
+      if(!favs.length){
+        box.innerHTML=""; empty.style.display="block"; return;
+      }
+      empty.style.display="none";
+      box.innerHTML = favs.map(t=>{
+        const c = idx.get(t)?.count || 0;
+        return `<button class="mini" type="button" data-favtag="${escapeHTML(t)}">⭐ ${escapeHTML(t)} <span class="muted mono">(${c})</span></button>`;
+      }).join("");
+      $$("[data-favtag]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          state.selectedTag = b.getAttribute("data-favtag");
+          state.tagMode = "all";
+          saveJSON(KEY_STATE,state);
+          setRoute("tags");
+        });
+      });
+    }
+
+    // ---------- Series ----------
+    function renderSeries(){
+      const idx = buildSeriesIndex();
+      const entries = Array.from(idx.entries());
+      const u = currentUser();
+      const mode = state.seriesMode || "all";
+      $("#seriesLabel").textContent = mode==="mine" ? "My Series" : "All Series";
+
+      let shown = entries;
+      if(mode==="mine" && u){
+        shown = entries.filter(([name,stories])=>stories.some(s=>s.owner===u));
+      }
+      shown.sort((a,b)=>b[1].length - a[1].length || a[0].localeCompare(b[0]));
+      $("#seriesCount").textContent = String(shown.length);
+
+      const listEl = $("#seriesList");
+      listEl.innerHTML = shown.map(([name,stories])=>{
+        return `
+          <div class="rowItem">
+            <div>
+              <h4>${escapeHTML(name)}</h4>
+              <p>${escapeHTML(stories[0]?.summary || "Series collection")}</p>
+              <div class="muted" style="font-size:12px; margin-top:8px;">Stories: <span class="mono">${stories.length}</span></div>
+            </div>
+            <div class="rowRight">
+              <button class="mini" type="button" data-seriesopen="${escapeHTML(name)}">Open</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+      $("#seriesEmpty").style.display = shown.length ? "none":"block";
+
+      $$("[data-seriesopen]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          state.selectedSeries = b.getAttribute("data-seriesopen");
+          saveJSON(KEY_STATE,state);
+          state.q = state.selectedSeries;
+          saveJSON(KEY_STATE,state);
+          setRoute("browse");
+        });
+      });
+
+      updateStats();
+    }
+
+    // ---------- Reader ----------
+    function openStory(id){
+      const s = library.find(x=>x.id===id);
+      if(!s) return toast("Story not found.");
+
+      s.reads = (s.reads||0) + 1;
+      s.updatedAt = nowISO();
+      saveJSON(KEY_LIB, library);
+
+      const today = new Date().toDateString();
+      if(state.lastReadDay !== today){
+        state.streak = (state.streak||0) + 1;
+        state.lastReadDay = today;
+      }
+
+      state.openId = id;
+      state.openChap = 0;
+      saveJSON(KEY_STATE,state);
+
+      setRoute("read");
+      renderReader();
+      toast(`Opened "${s.title}".`);
+    }
+
+    function readerOwnershipButtons(story){
+      const u = currentUser();
+      const ownerOk = u && story.owner === u;
+      $("#btnEditStory").disabled = !ownerOk;
+      $("#btnDeleteStory").disabled = !ownerOk;
+      if(!u){
+        $("#btnEditStory").title = "Login to edit your own stories.";
+        $("#btnDeleteStory").title = "Login to delete your own stories.";
+      }else if(!ownerOk){
+        $("#btnEditStory").title = "Only the owner can edit this story.";
+        $("#btnDeleteStory").title = "Only the owner can delete this story.";
+      }else{
+        $("#btnEditStory").title = "Edit your story.";
+        $("#btnDeleteStory").title = "Delete your story.";
+      }
+    }
+
+    function renderReader(){
+      updateStats();
+
+      const id = state.openId;
+      if(!id){
+        $("#readerStoryTitle").textContent = "Pick a story to read";
+        $("#readerStoryMeta").textContent = "Use Browse → Read";
+        $("#readerText").textContent = "Nothing open yet.";
+        $("#readerReads").textContent = "0";
+        $("#readerLikes").textContent = "0";
+        $("#readerWords").textContent = "0";
+        $("#readerProgress").textContent = "0%";
+        return;
+      }
+
+      const s = library.find(x=>x.id===id);
+      if(!s){
+        state.openId=null; saveJSON(KEY_STATE,state);
+        setRoute("browse");
+        return;
+      }
+
+      const chapters = chaptersOf(s);
+      const chapIndex = clamp(state.openChap||0, 0, chapters.length-1);
+      state.openChap = chapIndex;
+      saveJSON(KEY_STATE,state);
+
+      $("#readerStoryTitle").textContent = s.title;
+      $("#readerStoryMeta").textContent = `by ${s.author} • ${s.fandom||"No fandom"} • ${s.rating||"T"} • ${s.status||"Ongoing"}${s.series ? " • Series: "+s.series : ""}`;
+
+      $("#chapterSelect").innerHTML = chapters.map((c,i)=>`<option value="${i}">${escapeHTML(c.title || ("Chapter "+(i+1)))}</option>`).join("");
+      $("#chapterSelect").value = String(chapIndex);
+
+      $("#readerText").textContent = chapters[chapIndex].text || "";
+      $("#readerReads").textContent = String(s.reads||0);
+      $("#readerLikes").textContent = String(likesCount(s));
+      $("#readerWords").textContent = String(wordCount(chapters[chapIndex].text||""));
+
+      $("#btnPrevChap").disabled = chapIndex<=0;
+      $("#btnNextChap").disabled = chapIndex>=chapters.length-1;
+
+      const u = currentUser();
+      const liked = userHasLiked(s);
+      $("#btnLike").disabled = !u || liked;
+      $("#btnLike").textContent = !u ? "💜 Like (login)" : (liked ? "💜 Liked" : "💜 Like");
+
+      const subs = getSubAuthors();
+      const isSub = subs.has(norm(s.author));
+      $("#btnSubAuthor").textContent = isSub ? "🔔 Subscribed" : "🔔 Author";
+      $("#btnSubAuthor").disabled = !u;
+      $("#btnSubAuthor").title = u ? "Subscribe/unsubscribe to this author." : "Login to subscribe.";
+
+      readerOwnershipButtons(s);
+
+      const key = s.id + "::" + chapIndex;
+      const box = $("#readerBox");
+      setTimeout(()=>{
+        box.scrollTop = (progress[key] || 0);
+        updateProgressUI();
+      }, 0);
+    }
+
+    function updateProgressUI(){
+      const box = $("#readerBox");
+      const max = Math.max(1, box.scrollHeight - box.clientHeight);
+      const pct = Math.round((box.scrollTop / max) * 100);
+      $("#readerProgress").textContent = clamp(pct,0,100) + "%";
+    }
+
+    $("#readerBox").addEventListener("scroll", ()=>{
+      const id = state.openId;
+      if(!id) return;
+      const key = id + "::" + (state.openChap||0);
+      progress[key] = $("#readerBox").scrollTop;
+      saveJSON(KEY_PROGRESS, progress);
+      updateProgressUI();
+    });
+
+    function likeOpenStory(){
+      const u = currentUser();
+      if(!u) return toast("Login to like.");
+      const s = library.find(x=>x.id===state.openId);
+      if(!s) return;
+      if(!s.likesBy) s.likesBy = {};
+      if(s.likesBy[u]) return toast("You already liked this story.");
+      s.likesBy[u] = true;
+      s.updatedAt = nowISO();
+      saveJSON(KEY_LIB, library);
+      toast("Liked 💜");
+      renderReader();
+      renderAll();
+    }
+
+    function toggleAuthorSub(){
+      const u = currentUser();
+      if(!u) return toast("Login to subscribe.");
+      const s = library.find(x=>x.id===state.openId);
+      if(!s) return;
+      const a = norm(s.author);
+      const set = getSubAuthors();
+      if(set.has(a)){ set.delete(a); toast("Unsubscribed from author."); }
+      else { set.add(a); toast("Subscribed to author."); }
+      setSubAuthors(set);
+      renderReader();
+      updateStats();
+      if(state.route==="dashboard") renderDashboard();
+    }
+
+    function downloadOpenStory(){
+      const s = library.find(x=>x.id===state.openId);
+      if(!s) return toast("Open a story first.");
+      const chapters = chaptersOf(s);
+      const content =
+        `${s.title}\nby ${s.author}\n\n` +
+        chapters.map((c,i)=>`=== ${c.title || ("Chapter "+(i+1))} ===\n\n${c.text||""}\n`).join("\n");
+
+      const blob = new Blob([content], {type:"text/plain;charset=utf-8"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${safeName(s.title)}_by_${safeName(s.author)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      toast("Downloaded .txt");
+    }
+
+    // ---------- Bookmarks ----------
+    function toggleBookmark(id){
+      const set = getBookmarks();
+      if(set.has(id)) set.delete(id); else set.add(id);
+      setBookmarks(set);
+      toast(set.has(id) ? "Bookmarked!" : "Bookmark removed.");
+      updateStats();
+      if(state.route==="dashboard") renderDashboard();
+    }
+
+    // ---------- Dashboard ----------
+    function renderDashboard(){
+      const tab = state.dashTab || "my";
+      const listEl = $("#dashList");
+      const emptyEl = $("#dashEmpty");
+      const u = currentUser();
+      const bms = getBookmarks();
+      const subs = getSubAuthors();
+
+      let items = [];
+      if(tab==="my"){
+        items = u ? library.filter(s=>s.owner===u) : [];
+      }else if(tab==="bookmarks"){
+        items = library.filter(s=>bms.has(s.id));
+      }else{
+        const idx = new Map();
+        library.forEach(s=>{
+          const a = norm(s.author);
+          if(subs.has(a)) idx.set(a, (idx.get(a)||0)+1);
+        });
+
+        const authors = [...subs].sort((a,b)=>(idx.get(b)||0)-(idx.get(a)||0) || a.localeCompare(b));
+        listEl.innerHTML = authors.map(a=>{
+          const count = idx.get(a)||0;
+          return `
+            <div class="rowItem">
+              <div>
+                <h4>@${escapeHTML(a)}</h4>
+                <p>Stories by this author in your library: ${count}</p>
+              </div>
+              <div class="rowRight">
+                <button class="mini" type="button" data-viewauthor="${escapeHTML(a)}">View stories</button>
+                <button class="mini" type="button" data-unsub="${escapeHTML(a)}">Unsubscribe</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        emptyEl.style.display = authors.length ? "none":"block";
+
+        $$("[data-viewauthor]").forEach(b=>{
+          b.addEventListener("click", ()=>{
+            state.q = b.getAttribute("data-viewauthor");
+            saveJSON(KEY_STATE,state);
+            setRoute("browse");
+          });
+        });
+        $$("[data-unsub]").forEach(b=>{
+          b.addEventListener("click", ()=>{
+            const a = b.getAttribute("data-unsub");
+            const set = getSubAuthors();
+            set.delete(a);
+            setSubAuthors(set);
+            toast("Unsubscribed.");
+            renderDashboard();
+            updateStats();
+          });
+        });
+
+        return;
+      }
+
+      items = sortStories(items, "recent");
+
+      listEl.innerHTML = items.map(s=>{
+        const mine = u && s.owner===u;
+        return `
+          <div class="rowItem">
+            <div>
+              <h4>${escapeHTML(s.title)}</h4>
+              <p>${escapeHTML(s.summary||"No summary yet.")}</p>
+              <div class="muted" style="font-size:12px; margin-top:8px;">
+                by <span class="mono">${escapeHTML(s.author||"Unknown")}</span>
+                • 💜 <span class="mono">${likesCount(s)}</span>
+                • Reads <span class="mono">${s.reads||0}</span>
+                ${s.series ? `• Series <span class="mono">${escapeHTML(s.series)}</span>` : ""}
+              </div>
+            </div>
+            <div class="rowRight">
+              <button class="mini" type="button" data-dash="read" data-id="${escapeHTML(s.id)}">Read</button>
+              <button class="mini" type="button" data-dash="bm" data-id="${escapeHTML(s.id)}">${getBookmarks().has(s.id) ? "✅ BM" : "🔖 BM"}</button>
+              <button class="mini" type="button" data-dash="edit" data-id="${escapeHTML(s.id)}" ${mine ? "" : "disabled"} title="${mine ? "Edit your story" : "Only owner can edit"}">Edit</button>
+              <button class="mini" type="button" data-dash="del" data-id="${escapeHTML(s.id)}" ${mine ? "" : "disabled"} title="${mine ? "Delete your story" : "Only owner can delete"}">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      emptyEl.style.display = items.length ? "none":"block";
+
+      $$("[data-dash='read']").forEach(b=>b.addEventListener("click", ()=>openStory(b.getAttribute("data-id"))));
+      $$("[data-dash='bm']").forEach(b=>b.addEventListener("click", ()=>{ toggleBookmark(b.getAttribute("data-id")); renderDashboard(); }));
+      $$("[data-dash='edit']").forEach(b=>b.addEventListener("click", ()=>openUpload(b.getAttribute("data-id"))));
+      $$("[data-dash='del']").forEach(b=>b.addEventListener("click", ()=>deleteStory(b.getAttribute("data-id"))));
+    }
+
+    // ---------- Upload modal (paste + chapters) ----------
+    function openUpload(editId=null){
+      if(!isLoggedIn()) return toast("Login to upload.");
+      $("#uploadModalBack").classList.add("show");
+      document.body.style.overflow="hidden";
+
+      $("#fAuthor").value = currentUser();
+
+      if(editId){
+        const s = library.find(x=>x.id===editId);
+        if(!s) return toast("Story not found.");
+        if(s.owner !== currentUser()) return toast("You can only edit your own stories.");
+        $("#uploadTitle").textContent = "Edit Story";
+        $("#editId").value = s.id;
+        $("#fTitle").value = s.title || "";
+        $("#fAuthor").value = s.author || currentUser();
+        $("#fFandom").value = s.fandom || "";
+        $("#fRating").value = s.rating || "T";
+        $("#fTags").value = (s.tags||[]).join(", ");
+        $("#fSeries").value = s.series || "";
+        $("#fSummary").value = s.summary || "";
+        $("#fStatus").value = s.status || "Ongoing";
+        $("#fChapters").value = (chaptersOf(s).length || "");
+
+        if(Array.isArray(s.chaptersArr) && s.chaptersArr.length){
+          setUploadMode("chapters");
+          $("#chaptersList").innerHTML = "";
+          s.chaptersArr.forEach((c,i)=>addChapterUI(c.title || ("Chapter "+(i+1)), c.text || ""));
+        }else{
+          setUploadMode("paste");
+          $("#fContent").value = (s.content || chaptersOf(s).map(c=>c.title+"\n\n"+c.text).join("\n\n")) || "";
+        }
+      }else{
+        $("#uploadTitle").textContent = "Upload a Story";
+        $("#editId").value = "";
+        $("#uploadForm").reset();
+        $("#fAuthor").value = currentUser();
+        $("#fRating").value = "T";
+        $("#fStatus").value = "Ongoing";
+
+        if($("#modeField").value === "chapters"){
+          $("#chaptersList").innerHTML = "";
+          addChapterUI("Chapter 1","");
+        }else{
+          $("#chaptersList").innerHTML = "";
+        }
+      }
+
+      renderExistingTagsPool();
+      setTimeout(()=>$("#fTitle").focus(), 0);
+    }
+
+    function closeUpload(){
+      $("#uploadModalBack").classList.remove("show");
+      document.body.style.overflow="";
+    }
+
+    function setUploadMode(mode){
+      $("#modeField").value = mode;
+      $("#tabPaste").setAttribute("aria-pressed", mode==="paste" ? "true" : "false");
+      $("#tabChapters").setAttribute("aria-pressed", mode==="chapters" ? "true" : "false");
+      $("#pasteModeField").style.display = mode==="paste" ? "" : "none";
+      $("#chaptersModeBox").style.display = mode==="chapters" ? "" : "none";
+      if(mode==="chapters" && !$("#chaptersList").children.length){
+        addChapterUI("Chapter 1","");
+      }
+    }
+
+    function addChapterUI(title="", text=""){
+      const wrap = document.createElement("div");
+      wrap.className = "chapterBox";
+      wrap.innerHTML = `
+        <div class="chapterRow">
+          <input class="chapTitle" placeholder="Chapter title" value="${escapeHTML(title)}" />
+          <button class="mini btnRemoveChap" type="button">🗑 Remove</button>
+        </div>
+        <textarea class="chapText" placeholder="Chapter text...">${escapeHTML(text)}</textarea>
+      `;
+      $("#chaptersList").appendChild(wrap);
+      $(".btnRemoveChap", wrap).addEventListener("click", ()=>{
+        wrap.remove();
+        if(!$("#chaptersList").children.length) addChapterUI("Chapter 1","");
+      });
+    }
+
+    function renderExistingTagsPool(){
+      const pool = $("#existingTagsPool");
+      const q = norm($("#tagSearch").value||"");
+      const idx = buildTagIndex();
+      let tags = Array.from(idx.entries())
+        .sort((a,b)=>b[1].count-a[1].count || a[0].localeCompare(b[0]))
+        .map(([t,info])=>({t,count:info.count}));
+
+      if(q) tags = tags.filter(x=>x.t.includes(q));
+      tags = tags.slice(0, 40);
+
+      pool.innerHTML = tags.map(x=>`<button class="mini" type="button" data-addtag="${escapeHTML(x.t)}">${escapeHTML(x.t)} <span class="muted mono">(${x.count})</span></button>`).join("")
+        || `<span class="muted" style="font-size:12px;">No tags yet. Upload a story with tags first.</span>`;
+
+      $$("[data-addtag]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          addTagToInput(b.getAttribute("data-addtag"));
+        });
+      });
+    }
+
+    function addTagToInput(tag){
+      const existing = new Set(parseTags($("#fTags").value).map(norm));
+      const t = norm(tag);
+      if(!t) return;
+      if(existing.has(t)) return toast("Tag already added.");
+      const out = [...parseTags($("#fTags").value), tag].join(", ");
+      $("#fTags").value = out;
+      toast("Tag added.");
+    }
+
+    function saveStoryFromForm(e){
+      e.preventDefault();
+      const u = currentUser();
+      if(!u) return toast("Login first.");
+
+      const editId = $("#editId").value || null;
+
+      const title = $("#fTitle").value.trim();
+      const author = $("#fAuthor").value.trim() || u;
+      const fandom = $("#fFandom").value.trim();
+      const rating = $("#fRating").value;
+      const tags = parseTags($("#fTags").value);
+      const series = $("#fSeries").value.trim();
+      const summary = $("#fSummary").value.trim();
+      const status = $("#fStatus").value;
+
+      const mode = $("#modeField").value;
+
+      let chaptersArr = [];
+      let content = "";
+
+      if(mode==="chapters"){
+        const boxes = $$("#chaptersList .chapterBox");
+        chaptersArr = boxes.map((box,i)=>({
+          title: $(".chapTitle", box).value.trim() || ("Chapter "+(i+1)),
+          text: $(".chapText", box).value || ""
+        })).filter(c=>String(c.text||"").trim().length>0);
+
+        if(!chaptersArr.length) return toast("Add at least 1 chapter text.");
+      }else{
+        content = $("#fContent").value || "";
+        if(!content.trim()) return toast("Paste story content.");
+      }
+
+      if(!title) return toast("Title is required.");
+      if(!author) return toast("Author is required.");
+
+      if(editId){
+        const idx = library.findIndex(x=>x.id===editId);
+        if(idx<0) return toast("Story not found.");
+        if(library[idx].owner !== u) return toast("You can only edit your own stories.");
+
+        const old = library[idx];
+        library[idx] = {
+          ...old,
+          title, author, fandom, rating, tags, series, summary, status,
+          chaptersArr: mode==="chapters" ? chaptersArr : [],
+          content: mode==="paste" ? content : "",
+          updatedAt: nowISO()
+        };
+        toast("Story updated ✨");
+      }else{
+        const s = {
+          id: uid(),
+          owner: u,
+          title, author, fandom, rating, tags, series, summary, status,
+          chaptersArr: mode==="chapters" ? chaptersArr : [],
+          content: mode==="paste" ? content : "",
+          reads: 0,
+          likesBy: {},
+          createdAt: nowISO(),
+          updatedAt: nowISO()
+        };
+        library = [s, ...library];
+        toast("Story uploaded ✅");
+      }
+
+      saveJSON(KEY_LIB, library);
+      closeUpload();
+      renderAll();
+      setRoute("browse");
+    }
+
+    function deleteStory(id){
+      const u = currentUser();
+      const s = library.find(x=>x.id===id);
+      if(!s) return toast("Story not found.");
+      if(!u || s.owner !== u) return toast("You can only delete your own stories.");
+      if(!confirm(`Delete "${s.title}"? This cannot be undone.`)) return;
+
+      library = library.filter(x=>x.id!==id);
+      saveJSON(KEY_LIB, library);
+
+      const bms = getBookmarks(); bms.delete(id); setBookmarks(bms);
+
+      Object.keys(progress).forEach(k=>{ if(k.startsWith(id+"::")) delete progress[k]; });
+      saveJSON(KEY_PROGRESS, progress);
+
+      if(state.openId===id){ state.openId=null; state.openChap=0; saveJSON(KEY_STATE,state); }
+      toast("Deleted.");
+      renderAll();
+      setRoute("browse");
+    }
+
+    function editOpenStory(){
+      const u = currentUser();
+      const s = library.find(x=>x.id===state.openId);
+      if(!s) return;
+      if(!u || s.owner !== u) return toast("You can only edit your own stories.");
+      openUpload(s.id);
+    }
+
+    // ---------- Backup/Restore ----------
+    function backupLibrary(){
+      const payload = { app:"InkVerse", version:4, exportedAt: nowISO(), library, state: {
+        bookmarks: state.bookmarks||[],
+        subAuthors: state.subAuthors||[],
+        favTags: state.favTags||[]
+      }};
+      const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `inkverse_backup_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      toast("Backup downloaded.");
+    }
+    function restoreLibrary(file){
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const data = JSON.parse(reader.result);
+          if(!data || !Array.isArray(data.library)) throw new Error("bad");
+          const map = new Map(library.map(s=>[s.id,s]));
+          data.library.forEach(s=>{ if(s && s.id) map.set(s.id,s); });
+          library = Array.from(map.values());
+          saveJSON(KEY_LIB, library);
+
+          if(data.state){
+            state.bookmarks = Array.from(new Set([...(state.bookmarks||[]), ...(data.state.bookmarks||[])]));
+            state.subAuthors = Array.from(new Set([...(state.subAuthors||[]), ...(data.state.subAuthors||[])]));
+            state.favTags = Array.from(new Set([...(state.favTags||[]), ...(data.state.favTags||[])]));
+            saveJSON(KEY_STATE,state);
+          }
+
+          toast("Restored ✅");
+          renderAll();
+          setRoute("browse");
+        }catch{
+          toast("Restore failed. Choose a valid InkVerse backup file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ---------- Controls ----------
+    function setTextSize(size){
+      const r = $("#readerBox");
+      r.classList.remove("smallText","bigText","xbigText");
+      $("#txtSmall").setAttribute("aria-pressed","false");
+      $("#txtMed").setAttribute("aria-pressed","false");
+      $("#txtBig").setAttribute("aria-pressed","false");
+      $("#txtXB").setAttribute("aria-pressed","false");
+
+      if(size==="small"){ r.classList.add("smallText"); $("#txtSmall").setAttribute("aria-pressed","true"); }
+      else if(size==="big"){ r.classList.add("bigText"); $("#txtBig").setAttribute("aria-pressed","true"); }
+      else if(size==="xbig"){ r.classList.add("xbigText"); $("#txtXB").setAttribute("aria-pressed","true"); }
+      else { $("#txtMed").setAttribute("aria-pressed","true"); }
+    }
+
+    // ---------- renderAll ----------
+    function renderAll(){
+      $("#globalSearch").value = state.q || "";
+      applyThemeMode();
+      applyAccent();
+      updateAccountUI();
+      updateStats();
+      if(state.route==="home") renderHome();
+      if(state.route==="browse") renderBrowse();
+      if(state.route==="tags") renderTags();
+      if(state.route==="series") renderSeries();
+      if(state.route==="read") renderReader();
+      if(state.route==="dashboard") renderDashboard();
+    }
+
+    // ---------- Events ----------
+    $$(".navbtn[data-route]").forEach(b=>b.addEventListener("click", ()=>setRoute(b.getAttribute("data-route"))));
+
+    $("#statStoriesBox").addEventListener("click", ()=>setRoute("browse"));
+    $("#statBookmarksBox").addEventListener("click", ()=>{ state.dashTab="bookmarks"; saveJSON(KEY_STATE,state); setRoute("dashboard"); });
+    $("#statSubsBox").addEventListener("click", ()=>{ state.dashTab="subs"; saveJSON(KEY_STATE,state); setRoute("dashboard"); });
+
+    $("#btnQuickUpload").addEventListener("click", ()=>openUpload());
+    $("#btnOpenUpload").addEventListener("click", ()=>openUpload());
+    $("#btnCreateFromScratch").addEventListener("click", ()=>openUpload());
+    $("#btnShuffle").addEventListener("click", ()=>{
+      if(!library.length) return toast("No stories yet.");
+      openStory(library[Math.floor(Math.random()*library.length)].id);
+    });
+
+    $("#btnGoBrowse").addEventListener("click", ()=>setRoute("browse"));
+    $("#btnGoTags").addEventListener("click", ()=>setRoute("tags"));
+    $("#btnGoTags2").addEventListener("click", ()=>setRoute("tags"));
+    $("#btnGoSeries").addEventListener("click", ()=>setRoute("series"));
+    $("#btnGoDashSubs").addEventListener("click", ()=>{ state.dashTab="subs"; saveJSON(KEY_STATE,state); setRoute("dashboard"); });
+
+    $("#btnStartReading").addEventListener("click", ()=>{
+      if(state.openId){ setRoute("read"); }
+      else toast("Open a story first.");
+    });
+
+    $("#btnDemo").addEventListener("click", ()=>{
+      toast("Demo stories are sample fics to test features. You can’t edit them.");
+      addDemo();
+    });
+
+    $("#globalSearch").addEventListener("input",(e)=>{
+      state.q = e.target.value;
+      saveJSON(KEY_STATE,state);
+      if(state.route==="browse") renderBrowse();
+    });
+    $("#globalSearch").addEventListener("keydown",(e)=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        if(state.route!=="browse") setRoute("browse");
+        renderBrowse();
+      }
+    });
+
+    $("#sortSelect").addEventListener("change",(e)=>{ state.sort=e.target.value; saveJSON(KEY_STATE,state); renderBrowse(); });
+    $("#ratingFilter").addEventListener("change",(e)=>{ state.ratingFilter=e.target.value; saveJSON(KEY_STATE,state); renderBrowse(); });
+    $("#statusFilter").addEventListener("change",(e)=>{ state.statusFilter=e.target.value; saveJSON(KEY_STATE,state); renderBrowse(); });
+    $("#includeTags").addEventListener("input",(e)=>{ state.includeTags=e.target.value; saveJSON(KEY_STATE,state); renderBrowse(); });
+    $("#excludeTags").addEventListener("input",(e)=>{ state.excludeTags=e.target.value; saveJSON(KEY_STATE,state); renderBrowse(); });
+    $("#btnClearFilters").addEventListener("click", ()=>{
+      state.q=""; state.sort="recent"; state.ratingFilter="all"; state.statusFilter="all";
+      state.includeTags=""; state.excludeTags="";
+      saveJSON(KEY_STATE,state);
+      $("#globalSearch").value="";
+      renderBrowse();
+      toast("Filters cleared.");
+    });
+
+    $("#btnTagsAll").addEventListener("click", ()=>{ state.tagMode="all"; saveJSON(KEY_STATE,state); renderTags(); });
+    $("#btnTagsPopular").addEventListener("click", ()=>{ state.tagMode="popular"; saveJSON(KEY_STATE,state); renderTags(); });
+    $("#btnTagsFavs").addEventListener("click", ()=>{ state.tagMode="favs"; saveJSON(KEY_STATE,state); renderTags(); });
+    $("#btnTagsClear").addEventListener("click", ()=>{ state.selectedTag=null; saveJSON(KEY_STATE,state); renderTags(); });
+
+    $("#btnSeriesAll").addEventListener("click", ()=>{ state.seriesMode="all"; saveJSON(KEY_STATE,state); renderSeries(); });
+    $("#btnSeriesMine").addEventListener("click", ()=>{ state.seriesMode="mine"; saveJSON(KEY_STATE,state); renderSeries(); });
+    $("#btnSeriesClear").addEventListener("click", ()=>{ state.selectedSeries=null; saveJSON(KEY_STATE,state); renderSeries(); });
+
+    $("#btnLike").addEventListener("click", likeOpenStory);
+    $("#btnSubAuthor").addEventListener("click", toggleAuthorSub);
+    $("#btnDownloadStory").addEventListener("click", downloadOpenStory);
+    $("#btnEditStory").addEventListener("click", editOpenStory);
+    $("#btnDeleteStory").addEventListener("click", ()=>deleteStory(state.openId));
+    $("#btnCloseReader").addEventListener("click", ()=>{
+      state.openId=null; state.openChap=0; saveJSON(KEY_STATE,state);
+      toast("Reader closed.");
+      setRoute("browse");
+    });
+
+    $("#chapterSelect").addEventListener("change",(e)=>{
+      state.openChap = Number(e.target.value||0);
+      saveJSON(KEY_STATE,state);
+      renderReader();
+    });
+    $("#btnPrevChap").addEventListener("click", ()=>{
+      state.openChap = Math.max(0, (state.openChap||0)-1);
+      saveJSON(KEY_STATE,state);
+      renderReader();
+    });
+    $("#btnNextChap").addEventListener("click", ()=>{
+      const s = library.find(x=>x.id===state.openId);
+      if(!s) return;
+      const total = chaptersOf(s).length;
+      state.openChap = Math.min(total-1, (state.openChap||0)+1);
+      saveJSON(KEY_STATE,state);
+      renderReader();
+    });
+
+    $("#txtSmall").addEventListener("click", ()=>setTextSize("small"));
+    $("#txtMed").addEventListener("click", ()=>setTextSize("med"));
+    $("#txtBig").addEventListener("click", ()=>setTextSize("big"));
+    $("#txtXB").addEventListener("click", ()=>setTextSize("xbig"));
+
+    $$("[data-dash]").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        state.dashTab=b.getAttribute("data-dash");
+        saveJSON(KEY_STATE,state);
+        setRoute("dashboard");
+      });
+    });
+
+    $("#btnResetAll").addEventListener("click", ()=>{
+      if(!confirm("Reset EVERYTHING (stories, users, likes, subs)?")) return;
+      localStorage.removeItem(KEY_LIB);
+      localStorage.removeItem(KEY_STATE);
+      localStorage.removeItem(KEY_USERS);
+      localStorage.removeItem(KEY_SESSION);
+      localStorage.removeItem(KEY_PROGRESS);
+      library = [];
+      state = loadJSON(KEY_STATE, state);
+      users = {};
+      session = {user:null};
+      progress = {};
+      toast("Reset complete.");
+      renderAll();
+      setRoute("home");
+    });
+
+    $("#btnLogin").addEventListener("click", openLogin);
+    $("#btnLogout").addEventListener("click", logout);
+    $("#btnCloseLogin").addEventListener("click", closeLogin);
+    $("#btnDoSignup").addEventListener("click", signup);
+    $("#btnDoLogin").addEventListener("click", login);
+    $("#loginModalBack").addEventListener("click", (e)=>{ if(e.target=== $("#loginModalBack")) closeLogin(); });
+
+    $("#btnThemeSystem").addEventListener("click", ()=>setThemeMode("system"));
+    $("#btnThemeDark").addEventListener("click", ()=>setThemeMode("dark"));
+    $("#btnThemeLight").addEventListener("click", ()=>setThemeMode("light"));
+
+    $("#btnGlow").addEventListener("click", ()=>setAccent("glow"));
+    $("#btnCalm").addEventListener("click", ()=>setAccent("calm"));
+    $("#btnZen").addEventListener("click", ()=>setAccent("zen"));
+
+    $("#btnCloseUpload").addEventListener("click", closeUpload);
+    $("#btnCancelUpload").addEventListener("click", closeUpload);
+    $("#uploadModalBack").addEventListener("click",(e)=>{ if(e.target===$("#uploadModalBack")) closeUpload(); });
+    $("#uploadForm").addEventListener("submit", saveStoryFromForm);
+
+    // ✅ Make the sticky Upload story button actually submit the form
+    $("#btnUploadStory").addEventListener("click", ()=>{
+      $("#uploadForm").requestSubmit();
+    });
+
+    $("#tabPaste").addEventListener("click", ()=>setUploadMode("paste"));
+    $("#tabChapters").addEventListener("click", ()=>setUploadMode("chapters"));
+    $("#btnAddChapter").addEventListener("click", ()=>addChapterUI("Chapter "+($("#chaptersList").children.length+1), ""));
+
+    $("#tagSearch").addEventListener("input", renderExistingTagsPool);
+    $("#btnAddTypedTag").addEventListener("click", ()=>{
+      const t = norm($("#tagSearch").value);
+      if(!t) return toast("Type a tag first.");
+      addTagToInput(t);
+    });
+
+    $("#btnFillSample").addEventListener("click", ()=>{
+      $("#fTitle").value ||= "Untitled Fic";
+      $("#fFandom").value ||= "Original";
+      $("#fTags").value ||= "mystery, friendship, plot twist";
+      $("#fSeries").value ||= "";
+      $("#fSummary").value ||= "A short hook that makes readers click.";
+      $("#fStatus").value = $("#fStatus").value || "Ongoing";
+      if($("#modeField").value==="paste"){
+        $("#fContent").value ||= "Chapter 1\n\nWrite your story here...\n\nChapter 2\n\nMore story...";
+      }else{
+        $("#chaptersList").innerHTML="";
+        addChapterUI("Chapter 1","Write your chapter here...");
+      }
+      toast("Sample filled.");
+    });
+
+    $("#btnBackup").addEventListener("click", backupLibrary);
+    $("#btnRestore").addEventListener("click", ()=>$("#importFile").click());
+    $("#importFile").addEventListener("change",(e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(f) restoreLibrary(f);
+      e.target.value="";
+    });
+
+    // (Optional) Random read button on right panel
+    $("#btnRandomRead").addEventListener("click", ()=>{
+      if(!library.length) return toast("No stories yet.");
+      openStory(library[Math.floor(Math.random()*library.length)].id);
+    });
+
+    // ---------- Init ----------
+    (function init(){
+      applyThemeMode();
+      applyAccent();
+      updateAccountUI();
+      updateStats();
+      setRoute(state.route || "home");
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
